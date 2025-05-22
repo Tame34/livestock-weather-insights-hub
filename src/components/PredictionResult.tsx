@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useLivestock } from "@/contexts/LivestockContext";
 import { ADVICE, HEAT_STRESS_SIGNS } from "@/data/mockData";
 import StressLevelBar from "./StressLevelBar";
-import { AlertTriangle, ArrowRight, Download, ThermometerSun, CircleDashed } from "lucide-react";
+import { AlertTriangle, ArrowRight, Download, ThermometerSun, CircleDashed, FileJson } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { exportToCSV } from "@/utils/exportUtils";
+import { exportToCSV, exportToJSON } from "@/utils/exportUtils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const PredictionResult = () => {
   const { prediction, animalInfo, environmentalConditions, predictionHistory } = useLivestock();
@@ -22,6 +23,12 @@ const PredictionResult = () => {
   const handleExportCSV = () => {
     if (predictionHistory.length > 0) {
       exportToCSV(predictionHistory);
+    }
+  };
+
+  const handleExportJSON = () => {
+    if (predictionHistory.length > 0) {
+      exportToJSON(predictionHistory);
     }
   };
 
@@ -87,10 +94,24 @@ const PredictionResult = () => {
 
         {predictionHistory.length > 0 && (
           <div className="flex justify-end">
-            <Button variant="outline" onClick={handleExportCSV} className="flex items-center">
-              <Download className="h-4 w-4 mr-2" />
-              Export Report (CSV)
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Report
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportJSON}>
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </CardContent>

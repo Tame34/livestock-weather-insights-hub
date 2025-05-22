@@ -8,6 +8,8 @@ import EnvironmentalConditionsForm from "@/components/EnvironmentalConditionsFor
 import WeatherCard from "@/components/WeatherCard";
 import PredictionResult from "@/components/PredictionResult";
 import PredictionHistory from "@/components/PredictionHistory";
+import HistoricalTrends from "@/components/HistoricalTrends";
+import AdvancedAnalysis from "@/components/AdvancedAnalysis";
 import { mockPredictions } from "@/data/mockData";
 import { Beef, BarChart } from "lucide-react";
 
@@ -110,6 +112,10 @@ const LivestockApp = () => {
           </Card>
           
           {prediction && <PredictionResult />}
+          
+          {prediction && <AdvancedAnalysis />}
+          
+          <HistoricalTrends />
           
           <PredictionHistory />
         </div>
