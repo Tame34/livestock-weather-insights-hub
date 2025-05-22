@@ -9,7 +9,7 @@ import WeatherCard from "@/components/WeatherCard";
 import PredictionResult from "@/components/PredictionResult";
 import PredictionHistory from "@/components/PredictionHistory";
 import { mockPredictions } from "@/data/mockData";
-import { Cow, BarChart } from "lucide-react";
+import { Beef, BarChart } from "lucide-react";
 
 const LivestockApp = () => {
   const { 
@@ -62,7 +62,7 @@ const LivestockApp = () => {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <header className="mb-8 text-center">
         <h1 className="text-4xl font-bold mb-2 text-farm-green-dark flex items-center justify-center">
-          <Cow className="h-10 w-10 mr-3 text-farm-green" />
+          <Beef className="h-10 w-10 mr-3 text-farm-green" />
           Livestock Weather Insights Hub
         </h1>
         <p className="text-xl text-gray-600">
@@ -77,7 +77,7 @@ const LivestockApp = () => {
           <Card className="mt-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-2xl flex items-center">
-                <Cow className="mr-2 h-6 w-6 text-farm-green" /> Animal Selection
+                <Beef className="mr-2 h-6 w-6 text-farm-green" /> Animal Selection
               </CardTitle>
             </CardHeader>
             <CardContent>
