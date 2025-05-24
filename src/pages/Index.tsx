@@ -10,7 +10,7 @@ import PredictionResult from "@/components/PredictionResult";
 import PredictionHistory from "@/components/PredictionHistory";
 import HistoricalTrends from "@/components/HistoricalTrends";
 import AdvancedAnalysis from "@/components/AdvancedAnalysis";
-import { mockPredictions } from "@/data/mockData";
+import { callFlaskModel } from "@/data/mockData";
 import { Beef, BarChart } from "lucide-react";
 
 const LivestockApp = () => {
@@ -24,7 +24,7 @@ const LivestockApp = () => {
     setIsLoading 
   } = useLivestock();
 
-  const handlePredict = () => {
+  const handlePredict = async () => {
     // Validate input values
     if (!animalInfo.species || !animalInfo.breed || !animalInfo.age) {
       toast.error("Please select animal type, breed and age group");
@@ -33,31 +33,28 @@ const LivestockApp = () => {
 
     setIsLoading(true);
     
-    // Simulate API call delay
-    setTimeout(() => {
-      try {
-        // In a real app, this would be an API call to the backend
-        const result = mockPredictions(
-          animalInfo.species,
-          animalInfo.breed,
-          animalInfo.age,
-          environmentalConditions
-        );
-        
-        // Set prediction result
-        setPrediction(result);
-        
-        // Add to history
-        addToPredictionHistory(result);
-        
-        toast.success("Prediction completed successfully!");
-      } catch (error) {
-        console.error("Error generating prediction:", error);
-        toast.error("Error generating prediction. Please try again.");
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1000);
+    try {
+      // Call your Flask model API
+      const result = await callFlaskModel(
+        animalInfo.species,
+        animalInfo.breed,
+        animalInfo.age,
+        environmentalConditions
+      );
+      
+      // Set prediction result
+      setPrediction(result);
+      
+      // Add to history
+      addToPredictionHistory(result);
+      
+      toast.success("Prediction completed successfully!");
+    } catch (error) {
+      console.error("Error generating prediction:", error);
+      toast.error("Error generating prediction. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

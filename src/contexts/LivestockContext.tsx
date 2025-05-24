@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
 export interface EnvironmentalConditions {
@@ -18,7 +17,6 @@ export interface AnimalInfo {
 export interface Prediction {
   Body_Temperature_C: number;
   Respiration_Rate_bpm: number;
-  Cooling_Effect: number;
   stress_level: number;
   severity: string;
 }

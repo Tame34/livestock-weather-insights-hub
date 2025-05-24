@@ -53,7 +53,7 @@ const PredictionResult = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <div className="bg-muted p-4 rounded-lg text-center">
             <h4 className="text-sm font-medium text-muted-foreground mb-1">Body Temperature</h4>
             <p className="text-2xl font-bold">{prediction.Body_Temperature_C.toFixed(1)}°C</p>
@@ -62,11 +62,6 @@ const PredictionResult = () => {
           <div className="bg-muted p-4 rounded-lg text-center">
             <h4 className="text-sm font-medium text-muted-foreground mb-1">Respiration Rate</h4>
             <p className="text-2xl font-bold">{prediction.Respiration_Rate_bpm.toFixed(0)} bpm</p>
-          </div>
-          
-          <div className="bg-muted p-4 rounded-lg text-center">
-            <h4 className="text-sm font-medium text-muted-foreground mb-1">Cooling Efficacy</h4>
-            <p className="text-2xl font-bold">{prediction.Cooling_Effect.toFixed(0)}%</p>
           </div>
         </div>
 

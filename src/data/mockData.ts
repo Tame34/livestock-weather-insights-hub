@@ -93,7 +93,7 @@ export const HEAT_STRESS_SIGNS = {
   ]
 };
 
-// Mock calculation functions (would be replaced by actual model predictions)
+// Function to calculate stress level (matches your Flask model)
 export function calculateStressLevel(env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }): number {
   const stressIndex = env.temperature * 0.5 + env.humidity * 0.3 + env.solar_radiation * 0.15 - env.wind_speed * 2;
   
@@ -103,6 +103,41 @@ export function calculateStressLevel(env: { temperature: number, humidity: numbe
   return 3;
 }
 
+// Function to call your Flask API (replace with your actual API endpoint)
+export async function callFlaskModel(species: string, breed: string, age: string, env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }) {
+  // Replace 'http://localhost:5000' with your actual Flask server URL
+  const API_URL = 'http://localhost:5000/predict';
+  
+  try {
+    const formData = new FormData();
+    formData.append('species', species);
+    formData.append('breed', breed);
+    formData.append('age', age);
+    formData.append('temperature', env.temperature.toString());
+    formData.append('humidity', env.humidity.toString());
+    formData.append('wind_speed', env.wind_speed.toString());
+    formData.append('solar_radiation', env.solar_radiation.toString());
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get prediction from Flask model');
+    }
+
+    // If your Flask API returns JSON instead of HTML, parse it here
+    // For now, using fallback to mock prediction
+    throw new Error('Using fallback prediction');
+    
+  } catch (error) {
+    console.log('Flask API not available, using fallback prediction:', error);
+    return mockPredictions(species, breed, age, env);
+  }
+}
+
+// Mock prediction function (fallback when Flask API is not available)
 export function mockPredictions(species: string, breed: string, age: string, env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }) {
   // Animal-specific base temperatures
   const baseTemps = {
@@ -126,13 +161,9 @@ export function mockPredictions(species: string, breed: string, age: string, env
   
   const respRateIncrease = stressLevel * 15;
   
-  // Cooling effect decreases with stress level
-  const coolingEffect = Math.max(0, 100 - (stressLevel * 25));
-  
   return {
     Body_Temperature_C: baseTemp + tempIncrease,
     Respiration_Rate_bpm: baseRespRate + respRateIncrease,
-    Cooling_Effect: coolingEffect,
     stress_level: stressLevel,
     severity: SEVERITY_LABELS[stressLevel]
   };

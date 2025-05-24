@@ -23,7 +23,6 @@ const HistoricalTrends = () => {
         name: `#${index + 1} (${time})`,
         temperature: item.prediction.Body_Temperature_C,
         respiration: item.prediction.Respiration_Rate_bpm,
-        cooling: item.prediction.Cooling_Effect,
         environmentTemp: item.conditions.temperature,
         humidity: item.conditions.humidity,
         stressLevel: item.prediction.stress_level,
@@ -43,13 +42,6 @@ const HistoricalTrends = () => {
       theme: {
         light: "#3b82f6", // Blue
         dark: "#3b82f6",
-      },
-    },
-    cooling: {
-      label: "Cooling Effect (%)",
-      theme: {
-        light: "#10b981", // Green
-        dark: "#10b981",
       },
     },
     environmentTemp: {
@@ -75,9 +67,7 @@ const HistoricalTrends = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
               <YAxis />
-              <ChartTooltip>
-                <ChartTooltipContent />
-              </ChartTooltip>
+              <Tooltip />
               <Legend verticalAlign="top" height={36} />
               <Line
                 type="monotone"
@@ -93,15 +83,6 @@ const HistoricalTrends = () => {
                 dataKey="respiration"
                 name="Respiration Rate"
                 stroke="var(--color-respiration)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="cooling"
-                name="Cooling Effect"
-                stroke="var(--color-cooling)"
                 strokeWidth={2}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
@@ -124,7 +105,7 @@ const HistoricalTrends = () => {
           <div className="mt-4 bg-muted/30 p-4 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">
               <strong>Analysis:</strong> The chart displays trends in body temperature, respiration rate, 
-              cooling effect, and environmental temperature over time. Track these metrics to identify patterns 
+              and environmental temperature over time. Track these metrics to identify patterns 
               and correlations that may help predict heat stress conditions before they become critical.
             </p>
           </div>
