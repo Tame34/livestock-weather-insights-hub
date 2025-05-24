@@ -31,12 +31,28 @@ MODELS = {
 
 SPECIES = ['cattle', 'goat', 'sheep']
 BREEDS = {
-    sp: list(LABEL_ENCODERS.get(f"{sp.capitalize()}_Breed", LabelEncoder()).classes_)
-    for sp in SPECIES
+    'cattle': [
+        'Muturu',
+        'Red Bororo', 
+        'Sokoto Gudali',
+        'White Fulani'
+    ],
+    'goat': [
+        'Sahel',
+        'Sokoto Red',
+        'West African Dwarf'
+    ],
+    'sheep': [
+        'Balami',
+        'Uda',
+        'Yankasa'
+    ]
 }
+
 AGES = {
-    sp: list(LABEL_ENCODERS.get(f"{sp}_age_group", LabelEncoder()).classes_)
-    for sp in SPECIES
+    'cattle': ['adult', 'calf', 'yearling'],
+    'goat': ['adult', 'kid', 'yearling'],
+    'sheep': ['adult', 'lamb', 'yearling']
 }
 
 SEVERITY_LABELS = ["Normal", "Mild", "Moderate", "Severe"]
@@ -47,7 +63,8 @@ ADVICE = {
     3: "Take immediate action: misting, fans, or relocate animals to cooler areas."
 }
 
-WEATHERSTACK_API_KEY = 'e33ddff998a18c784c2dcc891fa73561'  # Replace with your real key
+# Add your WeatherStack API key here
+WEATHERSTACK_API_KEY = 'e33ddff998a18c784c2dcc891fa73561'  # Replace with your actual key
 REPORT_LOG = "stress_report.csv"
 
 
@@ -62,9 +79,70 @@ def calculate_stress_level(env):
     return 3
 
 
+def estimate_solar_radiation(uv_index, cloud_cover):
+    """Estimate solar radiation based on UV index and cloud cover"""
+    max_radiation = 1200
+    cloud_factor = 1 - (cloud_cover / 100) * 0.8
+    uv_factor = uv_index / 10
+    
+    hour = pd.Timestamp.now().hour
+    time_of_day_factor = 1 - abs(hour - 12) / 12
+    
+    return round(max_radiation * cloud_factor * uv_factor * time_of_day_factor)
+
+
 @app.route("/", methods=["GET"])
 def index():
     return render_template("index.html", species=SPECIES, breeds=BREEDS, ages=AGES)
+
+
+@app.route('/get_weather', methods=['POST'])
+def get_weather():
+    """Fetch weather data using backend API key"""
+    data = request.get_json()
+    location = data.get("location")
+    
+    if not location:
+        return jsonify({"error": "Location is required"}), 400
+
+    try:
+        url = f"http://api.weatherstack.com/current?access_key={WEATHERSTACK_API_KEY}&query={location}"
+        response = requests.get(url)
+        weather_data = response.json()
+
+        if 'error' in weather_data:
+            return jsonify({"error": weather_data['error']['info']}), 400
+
+        if 'current' not in weather_data or 'location' not in weather_data:
+            return jsonify({"error": "Invalid weather data received"}), 500
+
+        current = weather_data['current']
+        location_data = weather_data['location']
+        
+        # Calculate solar radiation
+        solar_radiation = estimate_solar_radiation(
+            current.get('uv_index', 0), 
+            current.get('cloudcover', 0)
+        )
+
+        return jsonify({
+            "temperature": current['temperature'],
+            "humidity": current['humidity'],
+            "wind_speed": current.get('wind_speed', 0),
+            "solar_radiation": solar_radiation,
+            "uv_index": current.get('uv_index', 0),
+            "cloudcover": current.get('cloudcover', 0),
+            "weather_descriptions": current.get('weather_descriptions', ['Unknown']),
+            "weather_icons": current.get('weather_icons', []),
+            "location": {
+                "name": location_data['name'],
+                "region": location_data['region'],
+                "country": location_data['country']
+            }
+        })
+    except Exception as e:
+        print(f"Weather API error: {str(e)}")
+        return jsonify({"error": "Failed to fetch weather data"}), 500
 
 
 @app.route('/predict', methods=['POST'])
@@ -87,38 +165,54 @@ def predict():
 
         print(f"Processing prediction for: {species} - {breed} - {age}")
         print(f"Environmental conditions: {env}")
+        print(f"Available features in model: {FEATURES}")
 
-        # Prepare input for model
-        full_input = {f: 0.0 for f in FEATURES}
-        full_input.update(env)
+        # Prepare input for model - Initialize with zeros
+        full_input = {feature: 0.0 for feature in FEATURES}
         
-        # Map age groups correctly
-        age_mapping = {
-            'Calf (0-6 months)': 'calf',
-            'Young (6-24 months)': 'yearling', 
-            'Adult (2-10 years)': 'adult',
-            'Senior (>10 years)': 'adult',
-            'Kid (0-6 months)': 'kid',
-            'Young (6-12 months)': 'yearling',
-            'Adult (1-7 years)': 'adult',
-            'Senior (>7 years)': 'adult',
-            'Lamb (0-6 months)': 'lamb',
-            'Young (6-12 months)': 'yearling',
-            'Adult (1-6 years)': 'adult',
-            'Senior (>6 years)': 'adult'
-        }
+        # Add environmental conditions
+        for key, value in env.items():
+            if key in full_input:
+                full_input[key] = value
+                print(f"Set {key} = {value}")
+
+        # Handle breed encoding
+        breed_key = f"{species.capitalize()}_Breed"
+        if breed_key in LABEL_ENCODERS:
+            try:
+                breed_encoded = LABEL_ENCODERS[breed_key].transform([breed])[0]
+                full_input[breed_key] = breed_encoded
+                print(f"Encoded breed '{breed}' as {breed_encoded} for key '{breed_key}'")
+            except ValueError as e:
+                print(f"Breed encoding error: {e}")
+                return jsonify({"error": f"Unknown breed: {breed}"}), 400
         
-        mapped_age = age_mapping.get(age, age)
-        
-        full_input[f"{species.capitalize()}_Breed"] = LABEL_ENCODERS[f"{species.capitalize()}_Breed"].transform([breed])[0]
-        full_input[f"{species}_age_group"] = LABEL_ENCODERS[f"{species}_age_group"].transform([mapped_age])[0]
-        
+        # Handle age encoding
+        age_key = f"{species}_age_group"
+        if age_key in LABEL_ENCODERS:
+            try:
+                age_encoded = LABEL_ENCODERS[age_key].transform([age])[0]
+                full_input[age_key] = age_encoded
+                print(f"Encoded age '{age}' as {age_encoded} for key '{age_key}'")
+            except ValueError as e:
+                print(f"Age encoding error: {e}")
+                return jsonify({"error": f"Unknown age group: {age}"}), 400
+
+        # Create DataFrame with correct feature order
         X = pd.DataFrame([full_input])[FEATURES]
+        print(f"Model input shape: {X.shape}")
+        print(f"Model input values: {X.iloc[0].to_dict()}")
 
-        predictions = {
-            name: float(MODELS[name].predict(X)[0])
-            for name in MODELS
-        }
+        # Make predictions
+        predictions = {}
+        for name, model in MODELS.items():
+            try:
+                pred_value = float(model.predict(X)[0])
+                predictions[name] = pred_value
+                print(f"Predicted {name}: {pred_value}")
+            except Exception as e:
+                print(f"Error predicting {name}: {e}")
+                predictions[name] = 0.0
 
         stress_level = calculate_stress_level(env)
         severity = SEVERITY_LABELS[stress_level]
@@ -147,33 +241,8 @@ def predict():
 
     except Exception as e:
         print(f"Error in prediction: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/get_weather", methods=["POST"])
-def get_weather():
-    data = request.get_json()
-    lat = data.get("lat")
-    lon = data.get("lon")
-    if not lat or not lon:
-        return jsonify({"error": "Missing coordinates."}), 400
-
-    try:
-        url = f"http://api.weatherstack.com/current?access_key={WEATHERSTACK_API_KEY}&query={lat},{lon}"
-        res = requests.get(url)
-        weather = res.json()
-
-        if 'current' not in weather:
-            return jsonify({"error": "Weather data not available."}), 500
-
-        return jsonify({
-            "temperature": weather['current']['temperature'],
-            "humidity": weather['current']['humidity'],
-            "wind_speed": weather['current'].get('wind_speed', 0),
-            "solar_radiation": 800,  # Estimated
-            "location": f"{weather['location']['name']}, {weather['location']['country']}"
-        })
-    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 

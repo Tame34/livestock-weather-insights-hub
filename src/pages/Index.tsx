@@ -10,7 +10,6 @@ import PredictionResult from "@/components/PredictionResult";
 import PredictionHistory from "@/components/PredictionHistory";
 import HistoricalTrends from "@/components/HistoricalTrends";
 import AdvancedAnalysis from "@/components/AdvancedAnalysis";
-import ApiConfig from "@/components/ApiConfig";
 import { callFlaskModel } from "@/data/mockData";
 import { Beef, BarChart } from "lucide-react";
 
@@ -73,8 +72,6 @@ const LivestockApp = () => {
           Predict and prevent heat stress in your livestock with weather-based analytics
         </p>
       </header>
-
-      <ApiConfig />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">

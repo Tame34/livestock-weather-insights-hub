@@ -21,13 +21,6 @@ const weatherCache = new Map<string, { data: WeatherData; timestamp: number }>()
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
 
 export const fetchWeatherByLocation = async (location: string): Promise<WeatherData | null> => {
-  const apiKey = localStorage.getItem('weatherstack_api_key');
-  
-  if (!apiKey) {
-    toast.error("Please configure your WeatherStack API key first");
-    return null;
-  }
-
   // Check cache first
   const cacheKey = location.toLowerCase().trim();
   const cached = weatherCache.get(cacheKey);
@@ -38,33 +31,33 @@ export const fetchWeatherByLocation = async (location: string): Promise<WeatherD
 
   try {
     console.log("Fetching fresh weather data for:", location);
-    const response = await fetch(
-      `http://api.weatherstack.com/current?access_key=${apiKey}&query=${encodeURIComponent(location)}`
-    );
+    const response = await fetch('http://localhost:5000/get_weather', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ location })
+    });
     
     const data = await response.json();
     
-    if (data.error) {
-      throw new Error(data.error.info || "Failed to fetch weather data");
-    }
-
-    if (!data.current || !data.location) {
-      throw new Error("Invalid weather data received");
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to fetch weather data");
     }
     
     const weatherData: WeatherData = {
-      temperature: data.current.temperature,
-      humidity: data.current.humidity,
-      wind_speed: data.current.wind_speed || 0,
-      weather_descriptions: data.current.weather_descriptions || ["Unknown"],
-      weather_icons: data.current.weather_icons || [],
+      temperature: data.temperature,
+      humidity: data.humidity,
+      wind_speed: data.wind_speed || 0,
+      weather_descriptions: data.weather_descriptions || ["Unknown"],
+      weather_icons: data.weather_icons || [],
       location: {
         name: data.location.name,
         region: data.location.region,
         country: data.location.country
       },
-      uv_index: data.current.uv_index || 0,
-      cloudcover: data.current.cloudcover || 0
+      uv_index: data.uv_index || 0,
+      cloudcover: data.cloudcover || 0
     };
 
     // Cache the result
@@ -77,7 +70,7 @@ export const fetchWeatherByLocation = async (location: string): Promise<WeatherD
     
   } catch (error) {
     console.error("Error fetching weather data:", error);
-    toast.error("Failed to fetch weather data. Please check your API key and try again.");
+    toast.error("Failed to fetch weather data. Please check your internet connection and try again.");
     return null;
   }
 };
