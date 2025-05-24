@@ -10,6 +10,7 @@ import PredictionResult from "@/components/PredictionResult";
 import PredictionHistory from "@/components/PredictionHistory";
 import HistoricalTrends from "@/components/HistoricalTrends";
 import AdvancedAnalysis from "@/components/AdvancedAnalysis";
+import ApiConfig from "@/components/ApiConfig";
 import { callFlaskModel } from "@/data/mockData";
 import { Beef, BarChart } from "lucide-react";
 
@@ -25,6 +26,8 @@ const LivestockApp = () => {
   } = useLivestock();
 
   const handlePredict = async () => {
+    console.log("Starting prediction with:", { animalInfo, environmentalConditions });
+    
     // Validate input values
     if (!animalInfo.species || !animalInfo.breed || !animalInfo.age) {
       toast.error("Please select animal type, breed and age group");
@@ -42,6 +45,8 @@ const LivestockApp = () => {
         environmentalConditions
       );
       
+      console.log("Prediction result:", result);
+      
       // Set prediction result
       setPrediction(result);
       
@@ -51,7 +56,7 @@ const LivestockApp = () => {
       toast.success("Prediction completed successfully!");
     } catch (error) {
       console.error("Error generating prediction:", error);
-      toast.error("Error generating prediction. Please try again.");
+      toast.error("Error generating prediction. Make sure your Flask server is running on http://localhost:5000");
     } finally {
       setIsLoading(false);
     }
@@ -68,6 +73,8 @@ const LivestockApp = () => {
           Predict and prevent heat stress in your livestock with weather-based analytics
         </p>
       </header>
+
+      <ApiConfig />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1">

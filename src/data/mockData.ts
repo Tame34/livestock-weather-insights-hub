@@ -1,34 +1,33 @@
 
-// Data for development purposes - using Flask model only
+// Data for Flask model integration only
 
 export const SPECIES = ['cattle', 'goat', 'sheep'];
 
-// Updated breeds from your Flask model
+// Breeds from your Flask model - exactly as they appear in label_encoders.json
 export const BREEDS = {
   'cattle': [
-    'Red Bororo',
-    'Muturu', 
+    'Muturu',
+    'Red Bororo', 
     'Sokoto Gudali',
     'White Fulani'
   ],
   'goat': [
-    'West African Dwarf',
     'Sahel',
-    'Sokoto Red'
+    'Sokoto Red',
+    'West African Dwarf'
   ],
   'sheep': [
-    'Yankasa',
+    'Balami',
     'Uda',
-    'Dorper',
-    'Balami'
+    'Yankasa'
   ]
 };
 
-// Updated age groups from your Flask model
+// Age groups from your Flask model - exactly as they appear in label_encoders.json
 export const AGE_GROUPS = {
-  'cattle': ['Calf (0-6 months)', 'Young (6-24 months)', 'Adult (2-10 years)', 'Senior (>10 years)'],
-  'goat': ['Kid (0-6 months)', 'Young (6-12 months)', 'Adult (1-7 years)', 'Senior (>7 years)'],
-  'sheep': ['Lamb (0-6 months)', 'Young (6-12 months)', 'Adult (1-6 years)', 'Senior (>6 years)']
+  'cattle': ['adult', 'calf', 'yearling'],
+  'goat': ['adult', 'kid', 'yearling'],
+  'sheep': ['adult', 'lamb', 'yearling']
 };
 
 export const SEVERITY_LABELS = ["Normal", "Mild", "Moderate", "Severe"];
@@ -87,8 +86,9 @@ export const HEAT_STRESS_SIGNS = {
 
 // Function to call your Flask API
 export async function callFlaskModel(species: string, breed: string, age: string, env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }) {
-  // Replace 'http://localhost:5000' with your actual Flask server URL
   const API_URL = 'http://localhost:5000/predict';
+  
+  console.log("Calling Flask API with:", { species, breed, age, env });
   
   try {
     const formData = new FormData();
@@ -106,22 +106,22 @@ export async function callFlaskModel(species: string, breed: string, age: string
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get prediction from Flask model');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Parse the response - assuming your Flask model returns JSON
     const result = await response.json();
+    console.log("Flask API response:", result);
     
     // Map your Flask model response to the expected format
     return {
-      Body_Temperature_C: result.Body_Temperature_C,
-      Respiration_Rate_bpm: result.Respiration_Rate_bpm,
-      stress_level: result.stress_level,
-      severity: result.severity
+      Body_Temperature_C: result.predictions?.Body_Temperature_C || result.Body_Temperature_C || 38.5,
+      Respiration_Rate_bpm: result.predictions?.Respiration_Rate_bpm || result.Respiration_Rate_bpm || 50,
+      stress_level: result.stress_level || 0,
+      severity: result.severity || "Normal"
     };
     
   } catch (error) {
     console.error('Flask API error:', error);
-    throw error; // Re-throw the error so it can be handled by the calling component
+    throw error;
   }
 }

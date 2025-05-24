@@ -1,8 +1,6 @@
-# Updated app.py
-from flask_cors import CORS
-CORS(app)
 
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import json
 import pandas as pd
 import numpy as np
@@ -13,6 +11,7 @@ import requests
 from sklearn.preprocessing import LabelEncoder
 
 app = Flask(__name__)
+CORS(app)
 
 # Load config and models
 with open("model_features.json") as f:
@@ -27,7 +26,7 @@ with open("label_encoders.json") as f:
 
 MODELS = {
     name: joblib.load(f"{name}_model.pkl")
-    for name in ["Body_Temperature_C", "Respiration_Rate_bpm", "Cooling_Effect"]
+    for name in ["Body_Temperature_C", "Respiration_Rate_bpm"]
 }
 
 SPECIES = ['cattle', 'goat', 'sheep']
@@ -70,67 +69,85 @@ def index():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    species = request.form.get('species')
-    breed = request.form.get('breed')
-    age = request.form.get('age')
-    temperature = float(request.form.get('temperature'))
-    humidity = float(request.form.get('humidity'))
-    wind_speed = float(request.form.get('wind_speed'))
-    solar_radiation = float(request.form.get('solar_radiation'))
+    try:
+        species = request.form.get('species')
+        breed = request.form.get('breed')
+        age = request.form.get('age')
+        temperature = float(request.form.get('temperature'))
+        humidity = float(request.form.get('humidity'))
+        wind_speed = float(request.form.get('wind_speed'))
+        solar_radiation = float(request.form.get('solar_radiation'))
 
-    # 🔽 Your ML logic here (replace this with real model)
-    stress_level = 2
-    severity = ["Normal", "Mild", "Moderate", "Severe"][stress_level]
-    advice = "Provide shade and water, limit handling."
+        env = {
+            "temperature": temperature,
+            "humidity": humidity,
+            "wind_speed": wind_speed,
+            "solar_radiation": solar_radiation
+        }
 
-    predictions = {
-        "Body_Temperature_C": 39.5,
-        "Respiration_Rate_bpm": 60,
-        "Cooling_Effect": 70
-    }
+        print(f"Processing prediction for: {species} - {breed} - {age}")
+        print(f"Environmental conditions: {env}")
 
-    return jsonify({
-        "predictions": predictions,
-        "stress_level": stress_level,
-        "severity": severity,
-        "advice": advice
-    })
+        # Prepare input for model
+        full_input = {f: 0.0 for f in FEATURES}
+        full_input.update(env)
+        
+        # Map age groups correctly
+        age_mapping = {
+            'Calf (0-6 months)': 'calf',
+            'Young (6-24 months)': 'yearling', 
+            'Adult (2-10 years)': 'adult',
+            'Senior (>10 years)': 'adult',
+            'Kid (0-6 months)': 'kid',
+            'Young (6-12 months)': 'yearling',
+            'Adult (1-7 years)': 'adult',
+            'Senior (>7 years)': 'adult',
+            'Lamb (0-6 months)': 'lamb',
+            'Young (6-12 months)': 'yearling',
+            'Adult (1-6 years)': 'adult',
+            'Senior (>6 years)': 'adult'
+        }
+        
+        mapped_age = age_mapping.get(age, age)
+        
+        full_input[f"{species.capitalize()}_Breed"] = LABEL_ENCODERS[f"{species.capitalize()}_Breed"].transform([breed])[0]
+        full_input[f"{species}_age_group"] = LABEL_ENCODERS[f"{species}_age_group"].transform([mapped_age])[0]
+        
+        X = pd.DataFrame([full_input])[FEATURES]
 
-    # Prepare input for model
-    full_input = {f: 0.0 for f in FEATURES}
-    full_input.update(env)
-    full_input[f"{species.capitalize()}_Breed"] = LABEL_ENCODERS[f"{species.capitalize()}_Breed"].transform([breed])[0]
-    full_input[f"{species}_age_group"] = LABEL_ENCODERS[f"{species}_age_group"].transform([age])[0]
-    X = pd.DataFrame([full_input])[FEATURES]
+        predictions = {
+            name: float(MODELS[name].predict(X)[0])
+            for name in MODELS
+        }
 
-    predictions = {
-        name: float(MODELS[name].predict(X)[0])
-        for name in MODELS
-    }
+        stress_level = calculate_stress_level(env)
+        severity = SEVERITY_LABELS[stress_level]
+        advice = ADVICE[stress_level]
 
-    stress_level = calculate_stress_level(env)
-    severity = SEVERITY_LABELS[stress_level]
-    advice = ADVICE[stress_level]
+        # Log the report
+        log_data = {
+            "species": species,
+            "breed": breed,
+            "age": age,
+            **env,
+            **predictions,
+            "stress_level": severity,
+            "advice": advice
+        }
+        write_report(log_data)
 
-    # Log the report
-    log_data = {
-        "species": species,
-        "breed": breed,
-        "age": age,
-        **env,
-        **predictions,
-        "stress_level": severity,
-        "advice": advice
-    }
-    write_report(log_data)
+        return jsonify({
+            "predictions": predictions,
+            "Body_Temperature_C": predictions["Body_Temperature_C"],
+            "Respiration_Rate_bpm": predictions["Respiration_Rate_bpm"],
+            "stress_level": stress_level,
+            "severity": severity,
+            "advice": advice
+        })
 
-   return jsonify({
-    "predictions": predictions,
-    "stress_level": stress_level,
-    "severity": severity,
-    "advice": advice
-})
-
+    except Exception as e:
+        print(f"Error in prediction: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/get_weather", methods=["POST"])

@@ -1,8 +1,6 @@
 
 import { toast } from "sonner";
 
-const API_KEY = "YOUR_WEATHERSTACK_API_KEY"; // Replace with actual API key in production
-
 export interface WeatherData {
   temperature: number;
   humidity: number;
@@ -18,78 +16,78 @@ export interface WeatherData {
   cloudcover: number;
 }
 
+// Cache to prevent repeated requests for the same location
+const weatherCache = new Map<string, { data: WeatherData; timestamp: number }>();
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
 export const fetchWeatherByLocation = async (location: string): Promise<WeatherData | null> => {
+  const apiKey = localStorage.getItem('weatherstack_api_key');
+  
+  if (!apiKey) {
+    toast.error("Please configure your WeatherStack API key first");
+    return null;
+  }
+
+  // Check cache first
+  const cacheKey = location.toLowerCase().trim();
+  const cached = weatherCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log("Using cached weather data for:", location);
+    return cached.data;
+  }
+
   try {
-    // For development purposes, we'll use mock data
-    // In production, uncomment the fetch call below and use your API key
-    
-    /*
+    console.log("Fetching fresh weather data for:", location);
     const response = await fetch(
-      `http://api.weatherstack.com/current?access_key=${API_KEY}&query=${encodeURIComponent(location)}`
+      `http://api.weatherstack.com/current?access_key=${apiKey}&query=${encodeURIComponent(location)}`
     );
+    
     const data = await response.json();
     
     if (data.error) {
       throw new Error(data.error.info || "Failed to fetch weather data");
     }
+
+    if (!data.current || !data.location) {
+      throw new Error("Invalid weather data received");
+    }
     
-    return {
+    const weatherData: WeatherData = {
       temperature: data.current.temperature,
       humidity: data.current.humidity,
-      wind_speed: data.current.wind_speed,
-      weather_descriptions: data.current.weather_descriptions,
-      weather_icons: data.current.weather_icons,
+      wind_speed: data.current.wind_speed || 0,
+      weather_descriptions: data.current.weather_descriptions || ["Unknown"],
+      weather_icons: data.current.weather_icons || [],
       location: {
         name: data.location.name,
         region: data.location.region,
         country: data.location.country
       },
-      uv_index: data.current.uv_index,
-      cloudcover: data.current.cloudcover
+      uv_index: data.current.uv_index || 0,
+      cloudcover: data.current.cloudcover || 0
     };
-    */
-    
-    // Mock data for development
-    return mockWeatherData(location);
+
+    // Cache the result
+    weatherCache.set(cacheKey, {
+      data: weatherData,
+      timestamp: Date.now()
+    });
+
+    return weatherData;
     
   } catch (error) {
     console.error("Error fetching weather data:", error);
-    toast.error("Failed to fetch weather data. Please try again.");
+    toast.error("Failed to fetch weather data. Please check your API key and try again.");
     return null;
   }
 };
 
-// Mock weather data for development testing
-function mockWeatherData(location: string): WeatherData {
-  // Create somewhat realistic mock data
-  const isHot = Math.random() > 0.5;
-  
-  return {
-    temperature: isHot ? 25 + Math.random() * 10 : 15 + Math.random() * 10,
-    humidity: 40 + Math.random() * 50,
-    wind_speed: 1 + Math.random() * 9,
-    weather_descriptions: [isHot ? "Sunny" : "Partly cloudy"],
-    weather_icons: [isHot ? "https://assets.weatherstack.com/images/wsymbols01_png_64/wsymbol_0001_sunny.png" : "https://assets.weatherstack.com/images/wsymbols01_png_64/wsymbol_0002_sunny_intervals.png"],
-    location: {
-      name: location,
-      region: "Mock Region",
-      country: "Mock Country"
-    },
-    uv_index: isHot ? 6 + Math.floor(Math.random() * 4) : 2 + Math.floor(Math.random() * 3),
-    cloudcover: isHot ? Math.floor(Math.random() * 30) : 30 + Math.floor(Math.random() * 50)
-  };
-}
-
 // Function to estimate solar radiation based on cloud cover, UV index and time of day
 export const estimateSolarRadiation = (uvIndex: number, cloudCover: number): number => {
-  // Basic formula: Higher UV index and lower cloud cover = higher solar radiation
-  // Max solar radiation around 1200 W/m² for clear sky and high UV
-  
   const maxRadiation = 1200;
-  const cloudFactor = 1 - (cloudCover / 100) * 0.8; // Cloud cover reduces by up to 80%
-  const uvFactor = uvIndex / 10; // UV index 10+ is maximum
+  const cloudFactor = 1 - (cloudCover / 100) * 0.8;
+  const uvFactor = uvIndex / 10;
   
-  // Get time of day factor (simplified - assumes max at noon)
   const hour = new Date().getHours();
   const timeOfDayFactor = 1 - Math.abs(hour - 12) / 12;
   
