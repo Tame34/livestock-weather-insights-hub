@@ -1,12 +1,13 @@
 
-// Mock data for development purposes
+// Data for development purposes - using Flask model only
 
 export const SPECIES = ['cattle', 'goat', 'sheep'];
 
+// Updated breeds from your Flask model
 export const BREEDS = {
   'cattle': [
     'Holstein',
-    'Jersey',
+    'Jersey', 
     'Angus',
     'Hereford',
     'Charolais',
@@ -16,7 +17,7 @@ export const BREEDS = {
   'goat': [
     'Boer',
     'Alpine',
-    'Saanen',
+    'Saanen', 
     'Nubian',
     'Pygmy',
     'LaMancha',
@@ -33,6 +34,7 @@ export const BREEDS = {
   ]
 };
 
+// Updated age groups from your Flask model
 export const AGE_GROUPS = {
   'cattle': ['Calf (0-6 months)', 'Young (6-24 months)', 'Adult (2-10 years)', 'Senior (>10 years)'],
   'goat': ['Kid (0-6 months)', 'Young (6-12 months)', 'Adult (1-7 years)', 'Senior (>7 years)'],
@@ -93,17 +95,7 @@ export const HEAT_STRESS_SIGNS = {
   ]
 };
 
-// Function to calculate stress level (matches your Flask model)
-export function calculateStressLevel(env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }): number {
-  const stressIndex = env.temperature * 0.5 + env.humidity * 0.3 + env.solar_radiation * 0.15 - env.wind_speed * 2;
-  
-  if (stressIndex < 50) return 0;
-  if (stressIndex < 65) return 1;
-  if (stressIndex < 80) return 2;
-  return 3;
-}
-
-// Function to call your Flask API (replace with your actual API endpoint)
+// Function to call your Flask API
 export async function callFlaskModel(species: string, breed: string, age: string, env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }) {
   // Replace 'http://localhost:5000' with your actual Flask server URL
   const API_URL = 'http://localhost:5000/predict';
@@ -127,44 +119,19 @@ export async function callFlaskModel(species: string, breed: string, age: string
       throw new Error('Failed to get prediction from Flask model');
     }
 
-    // If your Flask API returns JSON instead of HTML, parse it here
-    // For now, using fallback to mock prediction
-    throw new Error('Using fallback prediction');
+    // Parse the response - assuming your Flask model returns JSON
+    const result = await response.json();
+    
+    // Map your Flask model response to the expected format
+    return {
+      Body_Temperature_C: result.Body_Temperature_C,
+      Respiration_Rate_bpm: result.Respiration_Rate_bpm,
+      stress_level: result.stress_level,
+      severity: result.severity
+    };
     
   } catch (error) {
-    console.log('Flask API not available, using fallback prediction:', error);
-    return mockPredictions(species, breed, age, env);
+    console.error('Flask API error:', error);
+    throw error; // Re-throw the error so it can be handled by the calling component
   }
-}
-
-// Mock prediction function (fallback when Flask API is not available)
-export function mockPredictions(species: string, breed: string, age: string, env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }) {
-  // Animal-specific base temperatures
-  const baseTemps = {
-    'cattle': 38.5,
-    'goat': 39.0,
-    'sheep': 39.3
-  };
-  
-  const baseTemp = baseTemps[species as keyof typeof baseTemps];
-  const stressLevel = calculateStressLevel(env);
-  
-  // Simulate temperature increase based on stress level
-  const tempIncrease = stressLevel * 0.5;
-  
-  // Simulate respiration rate changes
-  const baseRespRate = {
-    'cattle': 30,
-    'goat': 25,
-    'sheep': 20
-  }[species as keyof typeof baseTemps];
-  
-  const respRateIncrease = stressLevel * 15;
-  
-  return {
-    Body_Temperature_C: baseTemp + tempIncrease,
-    Respiration_Rate_bpm: baseRespRate + respRateIncrease,
-    stress_level: stressLevel,
-    severity: SEVERITY_LABELS[stressLevel]
-  };
 }
