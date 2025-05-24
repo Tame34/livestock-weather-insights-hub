@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Livestock Heat Stress Predictor</title>
+</head>
+<body>
+    <h1>🐄 Livestock Heat Stress Predictor 🌿</h1>
+    <form action="/predict" method="post">
+        <label for="species">Animal Type:</label>
+        <select name="species" id="species" onchange="updateForm(this.value)">
+            {% for s in species %}
+                <option value="{{ s }}">{{ s.capitalize() }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <label for="breed">Breed:</label>
+        <select name="breed" id="breed"></select><br><br>
+
+        <label for="age">Age Group:</label>
+        <select name="age" id="age"></select><br><br>
+
+        <h3>🌦️ Environmental Conditions</h3>
+
+        <label>Temperature (°C):</label>
+        <input type="number" name="temperature" step="0.1" min="-10" max="50" required title="Range: -10 to 50°C">
+        <small>(-10 to 50°C)</small><br><br>
+
+        <label>Humidity (%):</label>
+        <input type="number" name="humidity" step="0.1" min="0" max="100" required title="Range: 0 to 100%">
+        <small>(0 to 100%)</small><br><br>
+
+        <label>Wind Speed (m/s):</label>
+        <input type="number" name="wind_speed" step="0.1" min="0" max="25" required title="Range: 0 to 25 m/s">
+        <small>(0 to 25 m/s)</small><br><br>
+
+        <label>Solar Radiation (W/m²):</label>
+        <input type="number" name="solar_radiation" step="1" min="0" max="1200" required title="Range: 0 to 1200 W/m²">
+        <small>(0 to 1200 W/m²)</small><br><br>
+
+        <input type="submit" value="Predict">
+    </form>
+
+    <script>
+        const breedMap = {{ breeds|tojson }};
+        const ageMap = {{ ages|tojson }};
+
+        function updateForm(species) {
+            const breedSel = document.getElementById('breed');
+            const ageSel = document.getElementById('age');
+            breedSel.innerHTML = '';
+            ageSel.innerHTML = '';
+            (breedMap[species] || []).forEach(b => {
+                const opt = document.createElement("option");
+                opt.value = b;
+                opt.text = b;
+                breedSel.add(opt);
+            });
+            (ageMap[species] || []).forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a;
+                opt.text = a;
+                ageSel.add(opt);
+            });
+        }
+
+        updateForm(document.getElementById('species').value);
+    </script>
+</body>
+</html>

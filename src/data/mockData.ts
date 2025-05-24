@@ -6,31 +6,21 @@ export const SPECIES = ['cattle', 'goat', 'sheep'];
 // Updated breeds from your Flask model
 export const BREEDS = {
   'cattle': [
-    'Holstein',
-    'Jersey', 
-    'Angus',
-    'Hereford',
-    'Charolais',
-    'Brahman',
-    'Simmental'
+    'Red Bororo',
+    'Muturu', 
+    'Sokoto Gudali',
+    'White Fulani'
   ],
   'goat': [
-    'Boer',
-    'Alpine',
-    'Saanen', 
-    'Nubian',
-    'Pygmy',
-    'LaMancha',
-    'Kiko'
+    'West African Dwarf',
+    'Sahel',
+    'Sokoto Red'
   ],
   'sheep': [
-    'Merino',
-    'Suffolk',
+    'Yankasa',
+    'Uda',
     'Dorper',
-    'Border Leicester',
-    'Corriedale',
-    'Romney',
-    'Texel'
+    'Balami'
   ]
 };
 

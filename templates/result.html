@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction Result</title>
+</head>
+<body>
+    <h1>📊 Heat Stress Prediction Result</h1>
+    <p><strong>Animal:</strong> {{ species }} - {{ breed }} ({{ age }})</p>
+    <p><strong>Temperature:</strong> {{ env.temperature }}°C</p>
+    <p><strong>Humidity:</strong> {{ env.humidity }}%</p>
+    <p><strong>Wind Speed:</strong> {{ env.wind_speed }} m/s</p>
+    <p><strong>Solar Radiation:</strong> {{ env.solar_radiation }} W/m²</p>
+
+    <h2>💡 Results</h2>
+    <p><strong>Heat Stress Level:</strong> {{ stress_level }} ({{ severity }})</p>
+    <p><strong>Predicted Body Temperature:</strong> {{ predictions.Body_Temperature_C }}°C</p>
+    <p><strong>Respiration Rate:</strong> {{ predictions.Respiration_Rate_bpm }} bpm</p>
+    <p><strong>Cooling Effect:</strong> {{ predictions.Cooling_Effect }}</p>
+
+    <h3>🧠 Advice:</h3>
+    <p>{{ advice }}</p>
+
+    <br><a href="/">🔙 Back to Form</a>
+</body>
+</html>
