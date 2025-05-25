@@ -36,7 +36,7 @@ const LivestockApp = () => {
     setIsLoading(true);
     
     try {
-      // Call your Flask model API
+      // Use TypeScript prediction logic
       const result = await callFlaskModel(
         animalInfo.species,
         animalInfo.breed,
@@ -55,7 +55,7 @@ const LivestockApp = () => {
       toast.success("Prediction completed successfully!");
     } catch (error) {
       console.error("Error generating prediction:", error);
-      toast.error("Error generating prediction. Make sure your Flask server is running on http://localhost:5000");
+      toast.error("Error generating prediction. Please try again.");
     } finally {
       setIsLoading(false);
     }

@@ -1,127 +1,130 @@
 
-// Data for Flask model integration only
-
 export const SPECIES = ['cattle', 'goat', 'sheep'];
 
-// Breeds from your Flask model - exactly as they appear in label_encoders.json
 export const BREEDS = {
-  'cattle': [
+  cattle: [
     'Muturu',
     'Red Bororo', 
     'Sokoto Gudali',
     'White Fulani'
   ],
-  'goat': [
+  goat: [
     'Sahel',
     'Sokoto Red',
     'West African Dwarf'
   ],
-  'sheep': [
+  sheep: [
     'Balami',
     'Uda',
     'Yankasa'
   ]
 };
 
-// Age groups from your Flask model - exactly as they appear in label_encoders.json
 export const AGE_GROUPS = {
-  'cattle': ['adult', 'calf', 'yearling'],
-  'goat': ['adult', 'kid', 'yearling'],
-  'sheep': ['adult', 'lamb', 'yearling']
+  cattle: ['adult', 'calf', 'yearling'],
+  goat: ['adult', 'kid', 'yearling'],
+  sheep: ['adult', 'lamb', 'yearling']
 };
 
 export const SEVERITY_LABELS = ["Normal", "Mild", "Moderate", "Severe"];
 
 export const ADVICE = {
-  'cattle': {
-    0: "No immediate action needed. Ensure cattle have access to shade and clean water.",
-    1: "Monitor cattle closely. Provide additional water sources and ensure shade is accessible. Consider adding electrolytes to water.",
-    2: "Reduce handling and movement of cattle. Ensure barns have good airflow and consider using fans. Provide cooling water sprays if available. Feed during cooler parts of the day.",
-    3: "Take immediate action! Use misting systems and fans. Move sensitive animals (pregnant, high-producing) to air-conditioned areas if possible. Consider wetting the ground. Provide cold water. Contact veterinarian if animals show severe distress signs."
+  cattle: {
+    0: "Cattle are comfortable. Ensure adequate water and shade access.",
+    1: "Monitor cattle closely. Provide extra water and ensure good ventilation.",
+    2: "Reduce cattle handling activities. Increase shade and consider cooling systems.",
+    3: "Emergency action needed! Implement immediate cooling measures for cattle."
   },
-  'goat': {
-    0: "No immediate action needed. Ensure goats have shade and fresh water.",
-    1: "Monitor goats for signs of discomfort. Provide extra water access and ensure adequate shade.",
-    2: "Reduce handling. Ensure good airflow in housing. Consider providing cooling mats. Feed during cooler hours.",
-    3: "Immediate intervention required! Use fans and misting systems. Move to cooler areas. Provide cold water. Watch for excessive panting and lethargy. Contact veterinarian if distress continues."
+  goat: {
+    0: "Goats are comfortable. Maintain regular care routines.",
+    1: "Watch goats for early heat stress signs. Increase water availability.",
+    2: "Reduce goat activity during hot hours. Ensure adequate shelter.",
+    3: "Critical heat stress risk for goats! Immediate cooling intervention required."
   },
-  'sheep': {
-    0: "No immediate action needed. Ensure access to shade and water. Monitor heavily fleeced animals.",
-    1: "Provide extra shade options. Ensure multiple water sources. Consider shearing if wool is heavy.",
-    2: "Reduce handling. Move to well-ventilated areas. Provide cool surfaces to rest on. Consider wetting the ground in pens.",
-    3: "Critical situation! Move sheep to cooler areas immediately. Apply cooling measures (fans, misting). Shear if wool is heavy. Monitor closely for heat stroke. Contact veterinarian if displaying serious symptoms."
+  sheep: {
+    0: "Sheep are in optimal conditions. Continue normal management.",
+    1: "Monitor sheep behavior. Provide additional water sources.",
+    2: "Limit sheep movement. Ensure proper ventilation and shade.",
+    3: "Severe heat stress risk for sheep! Take immediate protective action."
   }
 };
 
-// Signs of heat stress by species
 export const HEAT_STRESS_SIGNS = {
-  'cattle': [
-    "Increased respiration rate (>60 breaths per minute)",
-    "Open-mouth breathing/panting",
-    "Excessive drooling",
-    "Reduced feed intake",
-    "Decreased milk production",
-    "Lethargy or weakness",
-    "Crowding in shaded areas"
-  ],
-  'goat': [
-    "Rapid breathing (>40 breaths per minute)",
-    "Reduced activity",
+  cattle: [
+    "Increased breathing rate and panting",
+    "Excessive drooling and salivation",
+    "Seeking shade and reduced activity",
     "Decreased feed intake",
-    "Increased water consumption",
-    "Seeking shade or cool surfaces",
-    "Reduced milk production in dairy goats",
-    "Isolation from the herd"
+    "Standing with legs spread wide",
+    "Increased water consumption"
   ],
-  'sheep': [
-    "Rapid breathing/panting",
-    "Extended neck posture",
-    "Decreased rumination",
-    "Crowding into shade",
-    "Reduced movement",
-    "Increased water intake",
-    "Wool-biting or discomfort"
+  goat: [
+    "Rapid shallow breathing",
+    "Open-mouth breathing and panting",
+    "Lethargy and reduced movement",
+    "Decreased appetite",
+    "Seeking cool areas",
+    "Increased water drinking"
+  ],
+  sheep: [
+    "Heavy panting and breathing difficulty",
+    "Wool appears damp from sweating",
+    "Clustering in available shade",
+    "Reduced grazing activity",
+    "Increased water consumption",
+    "Restlessness and discomfort"
   ]
 };
 
-// Function to call your Flask API
-export async function callFlaskModel(species: string, breed: string, age: string, env: { temperature: number, humidity: number, solar_radiation: number, wind_speed: number }) {
-  const API_URL = 'http://localhost:5000/predict';
+// Mock prediction function - this calculates values based on environmental conditions
+export const callFlaskModel = async (
+  species: string,
+  breed: string,
+  age: string,
+  environmentalConditions: any
+) => {
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
-  console.log("Calling Flask API with:", { species, breed, age, env });
+  const { temperature, humidity, wind_speed, solar_radiation } = environmentalConditions;
   
-  try {
-    const formData = new FormData();
-    formData.append('species', species);
-    formData.append('breed', breed);
-    formData.append('age', age);
-    formData.append('temperature', env.temperature.toString());
-    formData.append('humidity', env.humidity.toString());
-    formData.append('wind_speed', env.wind_speed.toString());
-    formData.append('solar_radiation', env.solar_radiation.toString());
-
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log("Flask API response:", result);
-    
-    // Map your Flask model response to the expected format
-    return {
-      Body_Temperature_C: result.predictions?.Body_Temperature_C || result.Body_Temperature_C || 38.5,
-      Respiration_Rate_bpm: result.predictions?.Respiration_Rate_bpm || result.Respiration_Rate_bpm || 50,
-      stress_level: result.stress_level || 0,
-      severity: result.severity || "Normal"
-    };
-    
-  } catch (error) {
-    console.error('Flask API error:', error);
-    throw error;
-  }
-}
+  // Base values for different species
+  const baseValues = {
+    cattle: { bodyTemp: 38.5, respiration: 30 },
+    goat: { bodyTemp: 39.0, respiration: 25 },
+    sheep: { bodyTemp: 39.2, respiration: 28 }
+  };
+  
+  const base = baseValues[species as keyof typeof baseValues] || baseValues.cattle;
+  
+  // Calculate stress based on environmental factors
+  let tempStress = Math.max(0, (temperature - 25) * 0.15);
+  let humidityStress = Math.max(0, (humidity - 50) * 0.08);
+  let solarStress = Math.max(0, (solar_radiation - 400) * 0.0008);
+  let windReduction = Math.max(0, (wind_speed - 1) * 0.5);
+  
+  // Age and breed modifiers
+  const ageModifier = age === 'adult' ? 1.0 : age === 'yearling' ? 1.1 : 1.15;
+  const breedModifier = Math.random() * 0.3 + 0.85; // Breed variation
+  
+  // Calculate final values
+  const totalStress = (tempStress + humidityStress + solarStress - windReduction) * ageModifier * breedModifier;
+  
+  const bodyTemperature = base.bodyTemp + totalStress;
+  const respirationRate = base.respiration + (totalStress * 3.5);
+  
+  // Determine stress level
+  let stressLevel = 0;
+  if (totalStress > 2.5) stressLevel = 3;
+  else if (totalStress > 1.5) stressLevel = 2;
+  else if (totalStress > 0.8) stressLevel = 1;
+  
+  const severity = SEVERITY_LABELS[stressLevel];
+  
+  return {
+    Body_Temperature_C: Number(bodyTemperature.toFixed(2)),
+    Respiration_Rate_bpm: Number(respirationRate.toFixed(0)),
+    stress_level: stressLevel,
+    severity: severity
+  };
+};
