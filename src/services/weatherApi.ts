@@ -31,19 +31,23 @@ export const fetchWeatherByLocation = async (location: string): Promise<WeatherD
 
   try {
     console.log("Fetching fresh weather data for:", location);
+    
+    // Check if backend is running
     const response = await fetch('http://localhost:5000/get_weather', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ location })
+      body: JSON.stringify({ location }),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
     
-    const data = await response.json();
-    
     if (!response.ok) {
-      throw new Error(data.error || "Failed to fetch weather data");
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
+    
+    const data = await response.json();
     
     const weatherData: WeatherData = {
       temperature: data.temperature,
@@ -70,7 +74,19 @@ export const fetchWeatherByLocation = async (location: string): Promise<WeatherD
     
   } catch (error) {
     console.error("Error fetching weather data:", error);
-    toast.error("Failed to fetch weather data. Please check your internet connection and try again.");
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
+        toast.error("Cannot connect to weather service. Please ensure the Flask backend is running on http://localhost:5000");
+      } else if (error.name === 'TimeoutError') {
+        toast.error("Weather request timed out. Please try again.");
+      } else {
+        toast.error(`Weather API error: ${error.message}`);
+      }
+    } else {
+      toast.error("Failed to fetch weather data. Please try again.");
+    }
+    
     return null;
   }
 };

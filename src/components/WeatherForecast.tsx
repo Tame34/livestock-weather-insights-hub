@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLivestock } from "@/contexts/LivestockContext";
-import { CloudSunRain, AlertTriangle, Thermometer, Water } from "lucide-react";
+import { CloudSunRain, AlertTriangle, Thermometer, Droplets } from "lucide-react";
 
 const WeatherForecast = () => {
   const { weatherData, environmentalConditions } = useLivestock();
@@ -90,7 +90,7 @@ const WeatherForecast = () => {
                     <span className="font-bold">{day.temperature.toFixed(1)}°C</span>
                   </div>
                   <div className="flex items-center justify-center">
-                    <Water className="h-4 w-4 mr-1 text-blue-500" />
+                    <Droplets className="h-4 w-4 mr-1 text-blue-500" />
                     <span>{day.humidity.toFixed(0)}%</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{day.condition}</p>
