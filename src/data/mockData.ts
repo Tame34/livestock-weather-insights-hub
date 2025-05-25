@@ -1,4 +1,3 @@
-
 export const SPECIES = ['cattle', 'goat', 'sheep'];
 
 export const BREEDS = {
@@ -54,25 +53,25 @@ export const HEAT_STRESS_SIGNS = {
     "Increased breathing rate and panting",
     "Excessive drooling and salivation",
     "Seeking shade and reduced activity",
-    "Decreased feed intake",
+    "Decreased feed intake and rumination",
     "Standing with legs spread wide",
-    "Increased water consumption"
+    "Increased water consumption and restlessness"
   ],
   goat: [
-    "Rapid shallow breathing",
-    "Open-mouth breathing and panting",
+    "Rapid shallow breathing and panting",
+    "Open-mouth breathing with tongue out",
     "Lethargy and reduced movement",
-    "Decreased appetite",
-    "Seeking cool areas",
-    "Increased water drinking"
+    "Decreased appetite and browsing",
+    "Seeking cool areas and shade",
+    "Increased water drinking and agitation"
   ],
   sheep: [
     "Heavy panting and breathing difficulty",
     "Wool appears damp from sweating",
-    "Clustering in available shade",
-    "Reduced grazing activity",
+    "Clustering in available shade areas",
+    "Reduced grazing and feed activity",
     "Increased water consumption",
-    "Restlessness and discomfort"
+    "Restlessness and discomfort signs"
   ]
 };
 

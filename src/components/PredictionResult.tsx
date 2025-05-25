@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useLivestock } from "@/contexts/LivestockContext";
 import { ADVICE, HEAT_STRESS_SIGNS } from "@/data/mockData";
 import StressLevelBar from "./StressLevelBar";
-import { AlertTriangle, ArrowRight, Download, ThermometerSun, CircleDashed, FileJson } from "lucide-react";
+import { AlertTriangle, ArrowRight, Download, ThermometerSun, CircleDashed, FileJson, Droplets, Wheat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportToCSV, exportToJSON } from "@/utils/exportUtils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -31,6 +31,63 @@ const PredictionResult = () => {
       exportToJSON(predictionHistory);
     }
   };
+
+  // Enhanced recommendations based on stress level
+  const getRecommendations = (stressLevel: number, species: string) => {
+    const baseRecommendations = {
+      0: [
+        "Continue regular monitoring schedules",
+        "Maintain adequate water supply",
+        "Ensure proper ventilation in shelters",
+        "Monitor feed intake regularly"
+      ],
+      1: [
+        "Increase water availability by 20-30%",
+        "Provide additional shade structures",
+        "Reduce handling and movement activities",
+        "Monitor animals every 2-3 hours"
+      ],
+      2: [
+        "Implement cooling systems (fans, misters)",
+        "Move animals to cooler areas",
+        "Increase water access points",
+        "Reduce feed during hottest hours"
+      ],
+      3: [
+        "Emergency cooling measures required",
+        "Immediate veterinary intervention",
+        "Continuous monitoring and care",
+        "Isolate severely affected animals"
+      ]
+    };
+    return baseRecommendations[stressLevel as keyof typeof baseRecommendations] || baseRecommendations[0];
+  };
+
+  // Feed recommendations based on stress level
+  const getFeedRecommendations = (stressLevel: number, species: string) => {
+    const feedAdvice = {
+      0: "Maintain normal feeding schedule with high-quality forage",
+      1: "Reduce concentrate feeds during peak heat hours",
+      2: "Feed during cooler morning and evening hours",
+      3: "Provide easily digestible feeds with electrolyte supplements"
+    };
+    return feedAdvice[stressLevel as keyof typeof feedAdvice] || feedAdvice[0];
+  };
+
+  // Water management recommendations
+  const getWaterRecommendations = (stressLevel: number, species: string) => {
+    const waterAdvice = {
+      0: `Provide ${species === 'cattle' ? '30-50' : '2-4'} liters per day`,
+      1: `Increase to ${species === 'cattle' ? '50-70' : '4-6'} liters per day`,
+      2: `Provide ${species === 'cattle' ? '70-100' : '6-8'} liters per day`,
+      3: `Unlimited access required - ${species === 'cattle' ? '100+' : '8+'} liters per day`
+    };
+    return waterAdvice[stressLevel as keyof typeof waterAdvice] || waterAdvice[0];
+  };
+
+  const recommendations = getRecommendations(prediction.stress_level, animalInfo.species);
+  const feedRecommendation = getFeedRecommendations(prediction.stress_level, animalInfo.species);
+  const waterRecommendation = getWaterRecommendations(prediction.stress_level, animalInfo.species);
 
   return (
     <Card className="w-full mt-6">
@@ -66,25 +123,59 @@ const PredictionResult = () => {
         </div>
 
         {prediction.stress_level > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
-            <h3 className="font-medium flex items-center text-amber-800">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <h3 className="font-medium flex items-center text-amber-800 mb-3">
               <AlertTriangle className="h-5 w-5 mr-2 text-amber-500" />
               Watch for these symptoms:
             </h3>
-            <ul className="list-disc pl-6 space-y-1 text-sm text-amber-800">
-              {stressSymptoms.slice(0, 4).map((symptom, index) => (
-                <li key={index}>{symptom}</li>
+            <div className="grid md:grid-cols-2 gap-2">
+              {stressSymptoms.map((symptom, index) => (
+                <div key={index} className="bg-white/50 p-2 rounded text-sm text-amber-800">
+                  {symptom}
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         )}
 
-        <div className="bg-farm-green-light/20 border border-farm-green/30 rounded-lg p-4 space-y-2">
-          <h3 className="font-medium flex items-center text-farm-green-dark">
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="bg-blue-50 border-blue-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center text-blue-800">
+                <Droplets className="h-5 w-5 mr-2" />
+                Water Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-blue-800">{waterRecommendation}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-green-50 border-green-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center text-green-800">
+                <Wheat className="h-5 w-5 mr-2" />
+                Feed Recommendation
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-green-800">{feedRecommendation}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="bg-farm-green-light/20 border border-farm-green/30 rounded-lg p-4">
+          <h3 className="font-medium flex items-center text-farm-green-dark mb-3">
             <CircleDashed className="h-5 w-5 mr-2 text-farm-green" />
             Recommended Actions:
           </h3>
-          <p className="text-farm-green-dark">{advice}</p>
+          <div className="grid md:grid-cols-2 gap-2">
+            {recommendations.map((recommendation, index) => (
+              <div key={index} className="bg-white/50 p-2 rounded text-sm text-farm-green-dark">
+                • {recommendation}
+              </div>
+            ))}
+          </div>
         </div>
 
         {predictionHistory.length > 0 && (
