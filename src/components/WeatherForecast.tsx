@@ -1,12 +1,106 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLivestock } from "@/contexts/LivestockContext";
-import { CloudSunRain, AlertTriangle, Thermometer, Droplets } from "lucide-react";
+import { CloudSunRain, AlertTriangle, Thermometer, Droplets, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { fetchWeatherByLocation } from "@/services/weatherApi";
+import { toast } from "sonner";
 
 const WeatherForecast = () => {
-  const { weatherData, environmentalConditions } = useLivestock();
+  const { weatherData, environmentalConditions, setWeatherData, setEnvironmentalConditions } = useLivestock();
+  const [locationData, setLocationData] = useState<any>(null);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
-  // Mock forecast data - in a real app, this would come from a weather API
+  // Auto-detect location on component mount
+  useEffect(() => {
+    detectUserLocation();
+  }, []);
+
+  const detectUserLocation = async () => {
+    setIsDetectingLocation(true);
+    
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by this browser");
+      setIsDetectingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Use coordinates to get weather data
+          const locationString = `${latitude},${longitude}`;
+          const data = await fetchWeatherByLocation(locationString);
+          
+          if (data) {
+            setLocationData({
+              latitude,
+              longitude,
+              accuracy: position.coords.accuracy
+            });
+            setWeatherData(data);
+            // Convert weather data to environmental conditions
+            const solarRadiation = estimateSolarRadiation(data.uv_index, data.cloudcover);
+            setEnvironmentalConditions({
+              temperature: data.temperature,
+              humidity: data.humidity,
+              wind_speed: data.wind_speed,
+              solar_radiation: solarRadiation,
+              location: data.location.name
+            });
+            toast.success(`Weather data loaded for your current location: ${data.location.name}`);
+          }
+        } catch (error) {
+          console.error("Error fetching weather for location:", error);
+          toast.error("Could not fetch weather data for your location");
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        let errorMessage = "Could not detect your location. ";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage += "Please allow location access and refresh the page.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage += "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage += "Location request timed out.";
+            break;
+          default:
+            errorMessage += "An unknown error occurred.";
+        }
+        
+        toast.error(errorMessage);
+        setIsDetectingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
+
+  // Function to estimate solar radiation based on cloud cover, UV index and time of day
+  const estimateSolarRadiation = (uvIndex: number, cloudCover: number): number => {
+    const maxRadiation = 1200;
+    const cloudFactor = 1 - (cloudCover / 100) * 0.8;
+    const uvFactor = uvIndex / 10;
+    
+    const hour = new Date().getHours();
+    const timeOfDayFactor = 1 - Math.abs(hour - 12) / 12;
+    
+    return Math.round(maxRadiation * cloudFactor * uvFactor * timeOfDayFactor);
+  };
+
+  // Generate forecast data based on current weather
   const generateForecastData = () => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -74,7 +168,21 @@ const WeatherForecast = () => {
         <CardTitle className="text-2xl flex items-center">
           <CloudSunRain className="mr-2 h-6 w-6 text-farm-green" />
           Weather Forecast & Livestock Impact
+          {locationData && (
+            <div className="ml-auto flex items-center text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4 mr-1" />
+              Live Location
+            </div>
+          )}
         </CardTitle>
+        {isDetectingLocation && (
+          <p className="text-sm text-muted-foreground">Detecting your location...</p>
+        )}
+        {weatherData && (
+          <p className="text-sm text-muted-foreground">
+            Current location: {weatherData.location.name}, {weatherData.location.region}
+          </p>
+        )}
       </CardHeader>
       
       <CardContent className="space-y-6">

@@ -1,3 +1,4 @@
+
 export const SPECIES = ['cattle', 'goat', 'sheep'];
 
 export const BREEDS = {
@@ -76,7 +77,23 @@ export const HEAT_STRESS_SIGNS = {
 };
 
 // Breed-specific heat tolerance characteristics
-const BREED_CHARACTERISTICS = {
+interface BreedCharacteristic {
+  heatTolerance: number;
+  baseTemp: number;
+  baseResp: number;
+}
+
+interface BreedCharacteristics {
+  [breed: string]: BreedCharacteristic;
+}
+
+interface AnimalBreedCharacteristics {
+  cattle: BreedCharacteristics;
+  goat: BreedCharacteristics;
+  sheep: BreedCharacteristics;
+}
+
+const BREED_CHARACTERISTICS: AnimalBreedCharacteristics = {
   cattle: {
     'Muturu': { heatTolerance: 0.9, baseTemp: 38.3, baseResp: 28 }, // High heat tolerance, adapted to tropical climate
     'Red Bororo': { heatTolerance: 0.8, baseTemp: 38.5, baseResp: 30 }, // Good heat tolerance
@@ -96,7 +113,23 @@ const BREED_CHARACTERISTICS = {
 };
 
 // Age-specific vulnerability factors
-const AGE_FACTORS = {
+interface AgeFactor {
+  vulnerability: number;
+  tempModifier: number;
+  respModifier: number;
+}
+
+interface AgeFactors {
+  [age: string]: AgeFactor;
+}
+
+interface AnimalAgeFactors {
+  cattle: AgeFactors;
+  goat: AgeFactors;
+  sheep: AgeFactors;
+}
+
+const AGE_FACTORS: AnimalAgeFactors = {
   cattle: {
     'adult': { vulnerability: 1.0, tempModifier: 0, respModifier: 0 },
     'calf': { vulnerability: 1.3, tempModifier: 0.2, respModifier: 5 }, // More vulnerable
@@ -127,11 +160,11 @@ export const callFlaskModel = async (
   const { temperature, humidity, wind_speed, solar_radiation } = environmentalConditions;
   
   // Get breed-specific characteristics
-  const breedData = BREED_CHARACTERISTICS[species as keyof typeof BREED_CHARACTERISTICS]?.[breed as keyof (typeof BREED_CHARACTERISTICS)[keyof typeof BREED_CHARACTERISTICS]] || 
+  const breedData = BREED_CHARACTERISTICS[species as keyof AnimalBreedCharacteristics]?.[breed] || 
     { heatTolerance: 0.7, baseTemp: 38.5, baseResp: 30 };
   
   // Get age-specific factors
-  const ageData = AGE_FACTORS[species as keyof typeof AGE_FACTORS]?.[age as keyof (typeof AGE_FACTORS)[keyof typeof AGE_FACTORS]] || 
+  const ageData = AGE_FACTORS[species as keyof AnimalAgeFactors]?.[age] || 
     { vulnerability: 1.0, tempModifier: 0, respModifier: 0 };
   
   // Calculate environmental stress factors
