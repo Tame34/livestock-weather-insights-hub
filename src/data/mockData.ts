@@ -75,7 +75,46 @@ export const HEAT_STRESS_SIGNS = {
   ]
 };
 
-// Mock prediction function - this calculates values based on environmental conditions
+// Breed-specific heat tolerance characteristics
+const BREED_CHARACTERISTICS = {
+  cattle: {
+    'Muturu': { heatTolerance: 0.9, baseTemp: 38.3, baseResp: 28 }, // High heat tolerance, adapted to tropical climate
+    'Red Bororo': { heatTolerance: 0.8, baseTemp: 38.5, baseResp: 30 }, // Good heat tolerance
+    'Sokoto Gudali': { heatTolerance: 0.7, baseTemp: 38.6, baseResp: 32 }, // Moderate heat tolerance
+    'White Fulani': { heatTolerance: 0.75, baseTemp: 38.4, baseResp: 29 } // Good heat tolerance
+  },
+  goat: {
+    'Sahel': { heatTolerance: 0.95, baseTemp: 38.8, baseResp: 22 }, // Excellent heat tolerance, desert adapted
+    'Sokoto Red': { heatTolerance: 0.85, baseTemp: 39.0, baseResp: 25 }, // Very good heat tolerance
+    'West African Dwarf': { heatTolerance: 0.8, baseTemp: 39.2, baseResp: 27 } // Good heat tolerance
+  },
+  sheep: {
+    'Balami': { heatTolerance: 0.7, baseTemp: 39.1, baseResp: 26 }, // Moderate heat tolerance
+    'Uda': { heatTolerance: 0.75, baseTemp: 39.0, baseResp: 25 }, // Good heat tolerance
+    'Yankasa': { heatTolerance: 0.8, baseTemp: 38.9, baseResp: 24 } // Good heat tolerance
+  }
+};
+
+// Age-specific vulnerability factors
+const AGE_FACTORS = {
+  cattle: {
+    'adult': { vulnerability: 1.0, tempModifier: 0, respModifier: 0 },
+    'calf': { vulnerability: 1.3, tempModifier: 0.2, respModifier: 5 }, // More vulnerable
+    'yearling': { vulnerability: 1.15, tempModifier: 0.1, respModifier: 3 } // Slightly more vulnerable
+  },
+  goat: {
+    'adult': { vulnerability: 1.0, tempModifier: 0, respModifier: 0 },
+    'kid': { vulnerability: 1.4, tempModifier: 0.3, respModifier: 8 }, // Much more vulnerable
+    'yearling': { vulnerability: 1.2, tempModifier: 0.15, respModifier: 4 } // More vulnerable
+  },
+  sheep: {
+    'adult': { vulnerability: 1.0, tempModifier: 0, respModifier: 0 },
+    'lamb': { vulnerability: 1.35, tempModifier: 0.25, respModifier: 6 }, // More vulnerable
+    'yearling': { vulnerability: 1.18, tempModifier: 0.12, respModifier: 3 } // Slightly more vulnerable
+  }
+};
+
+// Mock prediction function with realistic breed and age variations
 export const callFlaskModel = async (
   species: string,
   breed: string,
@@ -87,42 +126,47 @@ export const callFlaskModel = async (
   
   const { temperature, humidity, wind_speed, solar_radiation } = environmentalConditions;
   
-  // Base values for different species
-  const baseValues = {
-    cattle: { bodyTemp: 38.5, respiration: 30 },
-    goat: { bodyTemp: 39.0, respiration: 25 },
-    sheep: { bodyTemp: 39.2, respiration: 28 }
-  };
+  // Get breed-specific characteristics
+  const breedData = BREED_CHARACTERISTICS[species as keyof typeof BREED_CHARACTERISTICS]?.[breed as keyof (typeof BREED_CHARACTERISTICS)[keyof typeof BREED_CHARACTERISTICS]] || 
+    { heatTolerance: 0.7, baseTemp: 38.5, baseResp: 30 };
   
-  const base = baseValues[species as keyof typeof baseValues] || baseValues.cattle;
+  // Get age-specific factors
+  const ageData = AGE_FACTORS[species as keyof typeof AGE_FACTORS]?.[age as keyof (typeof AGE_FACTORS)[keyof typeof AGE_FACTORS]] || 
+    { vulnerability: 1.0, tempModifier: 0, respModifier: 0 };
   
-  // Calculate stress based on environmental factors
+  // Calculate environmental stress factors
   let tempStress = Math.max(0, (temperature - 25) * 0.15);
   let humidityStress = Math.max(0, (humidity - 50) * 0.08);
   let solarStress = Math.max(0, (solar_radiation - 400) * 0.0008);
   let windReduction = Math.max(0, (wind_speed - 1) * 0.5);
   
-  // Age and breed modifiers
-  const ageModifier = age === 'adult' ? 1.0 : age === 'yearling' ? 1.1 : 1.15;
-  const breedModifier = Math.random() * 0.3 + 0.85; // Breed variation
+  // Apply breed heat tolerance (higher tolerance = lower stress impact)
+  const breedStressReduction = (1 - breedData.heatTolerance) * 0.5;
+  const totalEnvironmentalStress = (tempStress + humidityStress + solarStress - windReduction) * (1 + breedStressReduction);
   
-  // Calculate final values
-  const totalStress = (tempStress + humidityStress + solarStress - windReduction) * ageModifier * breedModifier;
+  // Apply age vulnerability
+  const totalStress = totalEnvironmentalStress * ageData.vulnerability;
   
-  const bodyTemperature = base.bodyTemp + totalStress;
-  const respirationRate = base.respiration + (totalStress * 3.5);
+  // Calculate physiological responses
+  const bodyTemperature = breedData.baseTemp + ageData.tempModifier + (totalStress * 0.8);
+  const respirationRate = breedData.baseResp + ageData.respModifier + (totalStress * 4);
   
-  // Determine stress level
+  // Determine stress level with breed and age considerations
   let stressLevel = 0;
-  if (totalStress > 2.5) stressLevel = 3;
-  else if (totalStress > 1.5) stressLevel = 2;
-  else if (totalStress > 0.8) stressLevel = 1;
+  const stressThreshold = breedData.heatTolerance; // More tolerant breeds have higher thresholds
+  
+  if (totalStress > (3.0 - stressThreshold)) stressLevel = 3;
+  else if (totalStress > (2.0 - stressThreshold * 0.5)) stressLevel = 2;
+  else if (totalStress > (1.0 - stressThreshold * 0.3)) stressLevel = 1;
+  
+  // Add some realistic variation while keeping it deterministic for the same inputs
+  const variation = (breed.length + age.length + species.length) % 10 * 0.01;
   
   const severity = SEVERITY_LABELS[stressLevel];
   
   return {
-    Body_Temperature_C: Number(bodyTemperature.toFixed(2)),
-    Respiration_Rate_bpm: Number(respirationRate.toFixed(0)),
+    Body_Temperature_C: Number((bodyTemperature + variation).toFixed(2)),
+    Respiration_Rate_bpm: Number((respirationRate + variation * 5).toFixed(0)),
     stress_level: stressLevel,
     severity: severity
   };
