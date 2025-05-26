@@ -65,14 +65,23 @@ const LivestockApp = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-2 text-farm-green-dark flex items-center justify-center">
-          <Beef className="h-10 w-10 mr-3 text-farm-green" />
-          Livestock Weather Insights Hub
-        </h1>
-        <p className="text-xl text-gray-600">
-          Predict and prevent heat stress in your livestock with weather-based analytics
-        </p>
+      <header className="mb-8">
+        <div className="flex items-center justify-center mb-4">
+          <img 
+            src="https://images.unsplash.com/photo-1472396961693-142e6e269027?w=80&h=80&fit=crop&crop=center" 
+            alt="Livestock Logo" 
+            className="w-16 h-16 rounded-full mr-4 object-cover"
+          />
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-2 text-farm-green-dark flex items-center justify-center">
+              <Beef className="h-10 w-10 mr-3 text-farm-green" />
+              Livestock Weather Insights
+            </h1>
+            <p className="text-xl text-gray-600">
+              Predict and prevent heat stress in your livestock with weather-based analytics
+            </p>
+          </div>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
