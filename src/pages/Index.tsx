@@ -1,8 +1,10 @@
+
 import { LivestockProvider, useLivestock } from "@/contexts/LivestockContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import AnimalSelector from "@/components/AnimalSelector";
+import DiseaseDetection from "@/components/DiseaseDetection";
 import EnvironmentalConditionsForm from "@/components/EnvironmentalConditionsForm";
 import WeatherCard from "@/components/WeatherCard";
 import PredictionResult from "@/components/PredictionResult";
@@ -87,6 +89,8 @@ const LivestockApp = () => {
               <AnimalSelector />
             </CardContent>
           </Card>
+
+          <DiseaseDetection />
         </div>
         
         <div className="md:col-span-2">
