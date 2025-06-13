@@ -11,7 +11,6 @@ import PredictionHistory from "@/components/PredictionHistory";
 import HistoricalTrends from "@/components/HistoricalTrends";
 import AdvancedAnalysis from "@/components/AdvancedAnalysis";
 import WeatherForecast from "@/components/WeatherForecast";
-import LivestockManagement from "@/components/LivestockManagement";
 import { callFlaskModel } from "@/data/mockData";
 import { Beef, BarChart } from "lucide-react";
 
@@ -121,8 +120,6 @@ const LivestockApp = () => {
           {prediction && <AdvancedAnalysis />}
           
           <WeatherForecast />
-          
-          <LivestockManagement />
           
           <HistoricalTrends />
           
